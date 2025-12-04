@@ -185,13 +185,18 @@ window.convertToAudio = function () {
             const audioUrl = URL.createObjectURL(wavBlob);
             audioPlayer.src = audioUrl;
 
+            // Create a separate blob with 'application/octet-stream' for downloading
+            // This forces the browser to treat it as a generic file and respect the filename
+            const downloadBlob = new Blob([wavBlob], { type: 'application/octet-stream' });
+            const downloadUrl = URL.createObjectURL(downloadBlob);
+
             // Update download link
             downloadLink.href = '#';
             downloadLink.onclick = function (e) {
                 e.preventDefault();
                 const a = document.createElement('a');
                 a.style.display = 'none';
-                a.href = audioUrl;
+                a.href = downloadUrl;
                 a.download = 'encoded_image_data_color.wav';
                 document.body.appendChild(a);
                 a.click();
