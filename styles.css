@@ -117,5 +117,3 @@ input[type="file"]:focus+label {
 #reconstructionCanvas {
     transition: opacity 0.6s ease-in-out;
 }
-
-/* Removed .button-primary CSS class to use inline styles for guaranteed update */

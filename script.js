@@ -4,7 +4,7 @@ const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.pa
 const __initial_auth_token = typeof window.__initial_auth_token !== 'undefined' ? window.__initial_auth_token : undefined;
 
 // Constants and State
-// UPDATED: Increased sample rate to 192,000 Hz to drastically shorten audio duration without data loss.
+
 const AUDIO_SAMPLE_RATE = 192000;
 const BYTES_PER_PIXEL = 3;
 const METADATA_SIZE = 8;
@@ -21,7 +21,7 @@ const encodeSection = document.getElementById('encodeSection');
 const decodeSection = document.getElementById('decodeSection');
 const btnEncode = document.getElementById('btn-encode');
 const btnDecode = document.getElementById('btn-decode');
-// Removed statusMessage DOM element
+
 
 const imageCanvas = document.getElementById('imageCanvas');
 const reconstructionCanvas = document.getElementById('reconstructionCanvas');
@@ -58,7 +58,7 @@ window.switchTab = function (mode) {
         btnDecode.classList.remove('active', 'bg-white/90', 'shadow-md', 'scale-105');
         btnDecode.classList.add('hover:-translate-y-1');
 
-        // Removed showStatusMessage call
+
     } else {
         // Show Decode, Hide Encode
         decodeSection.classList.remove('hidden');
@@ -74,7 +74,7 @@ window.switchTab = function (mode) {
         btnEncode.classList.remove('active', 'bg-white/90', 'shadow-md', 'scale-105');
         btnEncode.classList.add('hover:-translate-y-1');
 
-        // Removed showStatusMessage call
+
     }
 }
 
