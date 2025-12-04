@@ -185,25 +185,14 @@ window.convertToAudio = function () {
             const audioUrl = URL.createObjectURL(wavBlob);
             audioPlayer.src = audioUrl;
 
-            // Create a separate blob with 'application/octet-stream' for downloading
-            // This forces the browser to treat it as a generic file and respect the filename
-            const downloadBlob = new Blob([wavBlob], { type: 'application/octet-stream' });
-            const downloadUrl = URL.createObjectURL(downloadBlob);
+            // Standard HTML5 Download Method
+            // We set the href and download attributes directly on the anchor tag.
+            // This allows the browser to handle the download natively, which is the most reliable way to ensure the filename is respected.
+            downloadLink.href = audioUrl;
+            downloadLink.download = 'encoded_image_data_color.wav';
 
-            // Update download link
-            downloadLink.href = '#';
-            downloadLink.onclick = function (e) {
-                e.preventDefault();
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = downloadUrl;
-                a.download = 'encoded_image_data_color.wav';
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => {
-                    document.body.removeChild(a);
-                }, 100);
-            };
+            // Remove any event listeners that might interfere
+            downloadLink.onclick = null;
 
             audioOutput.classList.remove('hidden');
             audioData = wavBlob;
