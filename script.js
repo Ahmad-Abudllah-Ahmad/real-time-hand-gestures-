@@ -16,6 +16,34 @@ let imageHeight = 0;
 let audioData = null;
 let isProcessing = false;
 
+// Robust file saving function that works across browsers
+function saveWavFile(blob, filename) {
+    // Method 1: Try navigator.msSaveBlob for IE/Edge
+    if (navigator.msSaveBlob) {
+        navigator.msSaveBlob(blob, filename);
+        return;
+    }
+
+    // Method 2: Use FileReader to convert to data URL, then download
+    // This approach is more reliable for preserving filenames
+    const reader = new FileReader();
+    reader.onload = function () {
+        const dataUrl = reader.result;
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+
+        // Cleanup
+        setTimeout(() => {
+            document.body.removeChild(link);
+        }, 100);
+    };
+    reader.readAsDataURL(blob);
+}
+
 // DOM Elements
 const encodeSection = document.getElementById('encodeSection');
 const decodeSection = document.getElementById('decodeSection');
@@ -182,7 +210,7 @@ window.convertToAudio = function () {
     setTimeout(() => {
         try {
             const wavBlob = createWavFile(rawImageData);
-            // 1. Validate WAV (The createWavFile function guarantees this, but we log it for assurance)
+            // 1. Validate WAV
             if (wavBlob.size > 44) {
                 console.log("✅ WAV Header Verified: RIFF/WAVE format confirmed.");
             } else {
@@ -194,26 +222,15 @@ window.convertToAudio = function () {
             const audioUrl = URL.createObjectURL(wavBlob);
             audioPlayer.src = audioUrl;
 
-            // 2. Force Download with Robust Method
-            // We create a temporary link, append it to the document, click it, and then remove it.
-            // This ensures the 'download' attribute is respected by the browser.
-            downloadLink.href = audioUrl;
-            downloadLink.download = 'encoded_image_data.wav'; // Simplified name
+            // Store blob for the download button to use
+            window.currentWavBlob = wavBlob;
 
-            // Programmatic click for immediate download
-            const tempLink = document.createElement('a');
-            tempLink.style.display = 'none';
-            tempLink.href = audioUrl;
-            tempLink.download = 'encoded_image_data.wav';
-            document.body.appendChild(tempLink);
-
-            tempLink.click();
-
-            // Cleanup after a delay to ensure download starts
-            setTimeout(() => {
-                document.body.removeChild(tempLink);
-                // Note: We don't revoke the object URL immediately so the audio player keeps working
-            }, 2000);
+            // Update the download link to trigger saveWavFile on click
+            downloadLink.href = '#';
+            downloadLink.onclick = function (e) {
+                e.preventDefault();
+                saveWavFile(window.currentWavBlob, 'encoded_image_data.wav');
+            };
 
             audioOutput.classList.remove('hidden');
             audioData = wavBlob;
