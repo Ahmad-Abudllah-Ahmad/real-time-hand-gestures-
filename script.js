@@ -16,32 +16,23 @@ let imageHeight = 0;
 let audioData = null;
 let isProcessing = false;
 
-// Robust file saving function that works across browsers
+// Robust file saving function using FileSaver.js
 function saveWavFile(blob, filename) {
-    // Method 1: Try navigator.msSaveBlob for IE/Edge
-    if (navigator.msSaveBlob) {
-        navigator.msSaveBlob(blob, filename);
-        return;
-    }
-
-    // Method 2: Use FileReader to convert to data URL, then download
-    // This approach is more reliable for preserving filenames
-    const reader = new FileReader();
-    reader.onload = function () {
-        const dataUrl = reader.result;
+    // Use FileSaver.js saveAs function - this is the most reliable cross-browser solution
+    if (typeof saveAs !== 'undefined') {
+        saveAs(blob, filename);
+    } else {
+        // Fallback if FileSaver.js didn't load
+        console.warn("FileSaver.js not loaded, using fallback method");
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = dataUrl;
+        link.href = url;
         link.download = filename;
-        link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
-
-        // Cleanup
-        setTimeout(() => {
-            document.body.removeChild(link);
-        }, 100);
-    };
-    reader.readAsDataURL(blob);
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
 }
 
 // DOM Elements
