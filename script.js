@@ -724,21 +724,31 @@ function updateParticles(dt) {
                 setColor(i3, colors, 1.0, 0.95, 0.4, 0.15);
             }
         } else if (showingTwoFingers) {
-            // WAVE effect - SMOOTHER implementation
+            // WAVE effect - DIRECT POSITION LERP (No physics jitter)
             currentMode = 'wave';
 
-            // Instead of adding velocity (which vibrates), we gently nudge positions
-            // Create a flowing sine wave field
-            const waveX = Math.sin(animationTime * 1.5 + py * 0.008);
-            const waveY = Math.cos(animationTime * 1.2 + px * 0.008);
+            // Calculate target position based on original position + wave offset
+            // This guarantees smoothness as it's deterministic, not cumulative
+            const ox = originalPositions[i3];
+            const oy = originalPositions[i3 + 1];
 
-            // Apply gentle force based on the wave
-            vx += waveX * 0.5;
-            vy += waveY * 0.5;
+            const waveOffsetX = Math.sin(animationTime * 2.0 + oy * 0.02) * 20; // Amplitude 20
+            const waveOffsetY = Math.cos(animationTime * 1.5 + ox * 0.02) * 20; // Amplitude 20
 
-            // Damping is handled later, but we keep velocity low for smoothness
-            vx *= 0.9;
-            vy *= 0.9;
+            const targetX = ox + waveOffsetX;
+            const targetY = oy + waveOffsetY;
+            const targetZ = originalPositions[i3 + 2]; // Keep Z mostly stable
+
+            // Smoothly move current position to target
+            // 0.1 lerp factor gives a nice fluid delay
+            positions[i3] = lerp(px, targetX, 0.1);
+            positions[i3 + 1] = lerp(py, targetY, 0.1);
+            positions[i3 + 2] = lerp(pz, targetZ, 0.1);
+
+            // Kill velocity so physics doesn't fight the lerp
+            vx = 0;
+            vy = 0;
+            vz = 0;
 
             setColor(i3, colors, 0.3, 0.7, 1.0, 0.08);
         } else {
@@ -762,9 +772,10 @@ function updateParticles(dt) {
             }
 
             // DUAL HAND EFFECTS
+            // DUAL HAND EFFECTS
             switch (combinedGesture) {
-                case GESTURES.BOTH_OPEN:
-                    // ATTRACT / READY - Two hands open = gather particles
+                case GESTURES.HANDS_CLOSE:
+                    // ATTRACT / READY - Fists close = gather particles
                     currentMode = 'attract';
                     compressionTarget = 0.8; // Compress to center
 
@@ -779,8 +790,8 @@ function updateParticles(dt) {
                     setColor(i3, colors, 0.2 * gatherPulse, 0.8 * gatherPulse, 1.0, 0.1);
                     break;
 
-                case GESTURES.HANDS_CLOSE:
-                    // EXPLOSION! - Fists close = massive explosion
+                case GESTURES.BOTH_OPEN:
+                    // EXPLOSION! - Both hands open = massive explosion
                     currentMode = 'explosion';
                     ringScaleTarget = 2.5;
 
@@ -798,13 +809,10 @@ function updateParticles(dt) {
                     vz += (Math.random() - 0.5) * 2.5;
 
                     // SPARKING EXPLOSION
-                    // Randomly make some particles super bright white/yellow
                     if (Math.random() > 0.7) {
-                        // Spark!
                         setColor(i3, colors, 1.0, 1.0, 0.8, 0.8); // Bright white-yellow
                     } else {
-                        // Fiery orange/red
-                        setColor(i3, colors, 1.0, 0.4, 0.1, 0.15);
+                        setColor(i3, colors, 1.0, 0.4, 0.1, 0.15); // Fiery orange/red
                     }
 
                     // Camera shake
@@ -814,7 +822,6 @@ function updateParticles(dt) {
 
                 case GESTURES.HANDS_FAR:
                     // Reset / Spread - Hands far apart
-                    // Just let them float back or spread slightly
                     ringScaleTarget = 1.2;
                     break;
 
@@ -843,20 +850,23 @@ function updateParticles(dt) {
                 const force = (1 - dist / CONFIG.forces.attractRadius) * CONFIG.forces.strength;
 
                 switch (gesture) {
-                    case GESTURES.OPEN:
-                        // Attract
-                        vx -= dx * force * 0.02;
-                        vy -= dy * force * 0.02;
-                        vz -= dz * force * 0.02;
-                        setColor(i3, colors, 0.2, 1.0, 0.5, 0.08);
+                    case GESTURES.FIST:
+                        // Attract - pull particles to hand
+                        // Vector from P to H is (hx-px, hy-py, hz-pz) = (dx, dy, dz)
+                        // Adding this vector moves P towards H
+                        vx += dx * force * 0.02;
+                        vy += dy * force * 0.02;
+                        vz += dz * force * 0.02;
+                        setColor(i3, colors, 0.2, 1.0, 0.5, 0.08); // Cyan for attract
                         break;
 
-                    case GESTURES.FIST:
+                    case GESTURES.OPEN:
                         // Repel - push particles away
+                        // Subtracting vector moves P away from H
                         vx -= dx * force * 0.02;
                         vy -= dy * force * 0.02;
                         vz -= dz * force * 0.02;
-                        setColor(i3, colors, 1.0, 0.2, 0.2, 0.06);
+                        setColor(i3, colors, 1.0, 0.2, 0.2, 0.06); // Red for repel
                         break;
 
                     case GESTURES.POINT:
@@ -1008,16 +1018,16 @@ function drawHand(ctx, lm, w, h, isPreview, color) {
 function updateUI() {
     const names = {
         [GESTURES.NONE]: 'Show your hands!',
-        [GESTURES.FIST]: '✊ Fist → Repel',
+        [GESTURES.FIST]: '✊ Fist → Attract',
         [GESTURES.TWO_FINGERS]: '✌️ 2 Fingers → Waves',
         [GESTURES.THREE_FINGERS]: '🤟 3 Fingers → TEXT',
         [GESTURES.FOUR_FINGERS]: '💥 4 Fingers → Explode',
-        [GESTURES.OPEN]: '🖐️ 5 Fingers → Attract',
+        [GESTURES.OPEN]: '🖐️ 5 Fingers → Repel',
         [GESTURES.PINCH]: '🤏 Pinch → DRAW',
         [GESTURES.POINT]: '👆 Point → Beam',
-        [GESTURES.BOTH_OPEN]: '🖐️🖐️ Both Open → GATHER',
+        [GESTURES.BOTH_OPEN]: '🖐️🖐️ Both Open → EXPLODE!',
         [GESTURES.BOTH_FIST]: '✊✊ Both Fists',
-        [GESTURES.HANDS_CLOSE]: '💥 Fists Close → EXPLODE!',
+        [GESTURES.HANDS_CLOSE]: '✊✊ Fists Close → GATHER',
         [GESTURES.HANDS_FAR]: '👐 Hands Apart → Spread'
     };
 

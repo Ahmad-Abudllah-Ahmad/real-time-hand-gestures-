@@ -19,13 +19,13 @@ A mesmerizing, interactive particle system controlled by real-time hand gestures
 
 | Gesture | Action | Effect |
 | :--- | :--- | :--- |
-| 🖐️🖐️ **Both Open** | **Gather** | Charge up energy by pulling particles in |
-| ✊✊ **Fists Close** | **Explode** | Trigger a massive particle explosion |
+| 🖐️🖐️ **Both Open** | **Explode** | Trigger a massive particle explosion |
+| ✊✊ **Fists Close** | **Gather** | Charge up energy by pulling particles in |
 | 💥 **4 Fingers** | **Explode** | Single-hand outward blast |
 | 🤟 **3 Fingers** | **Text** | Form custom text with particles |
 | ✌️ **2 Fingers** | **Wave** | Create gentle sine waves |
-| ✊ **Fist** | **Repel** | Push particles away |
-| 🖐️ **Open Hand** | **Attract** | Pull particles towards your hand |
+| ✊ **Fist** | **Attract** | Pull particles towards your hand |
+| 🖐️ **Open Hand** | **Repel** | Push particles away |
 
 ---
 
@@ -35,8 +35,8 @@ A mesmerizing, interactive particle system controlled by real-time hand gestures
 graph TD
     A[Webcam Input] -->|Video Stream| B(MediaPipe Hands)
     B -->|"Landmarks (x,y,z)"| C{Gesture Detection}
-    C -->|Fist| D[Repel Force]
-    C -->|Open| E[Attract Force]
+    C -->|Fist| D[Attract Force]
+    C -->|Open| E[Repel Force]
     C -->|3 Fingers| G[Text Formation]
     
     subgraph Particle Engine
@@ -77,15 +77,15 @@ sequenceDiagram
 ```mermaid
 stateDiagram-v2
     [*] --> Idle
-    Idle --> Repel: Fist
-    Idle --> Attract: Open Hand
+    Idle --> Attract: Fist
+    Idle --> Repel: Open Hand
     Idle --> Wave: 2 Fingers
     Idle --> Text: 3 Fingers
     
     state DualHand {
         [*] --> Ready
-        Ready --> Charging: Both Open
-        Charging --> Explosion: Fists Close
+        Ready --> Charging: Fists Close
+        Charging --> Explosion: Both Open
         Explosion --> Ready: Reset
     }
 ```
