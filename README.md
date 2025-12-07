@@ -19,7 +19,6 @@ A mesmerizing, interactive particle system controlled by real-time hand gestures
 
 | Gesture | Action | Effect |
 | :--- | :--- | :--- |
-| 🤏 **Pinch** | **Draw** | Create glowing trails with your fingers |
 | 🖐️🖐️ **Both Open** | **Gather** | Charge up energy by pulling particles in |
 | ✊✊ **Fists Close** | **Explode** | Trigger a massive particle explosion |
 | 💥 **4 Fingers** | **Explode** | Single-hand outward blast |
@@ -35,16 +34,14 @@ A mesmerizing, interactive particle system controlled by real-time hand gestures
 ```mermaid
 graph TD
     A[Webcam Input] -->|Video Stream| B(MediaPipe Hands)
-    B -->|Landmarks (x,y,z)| C{Gesture Detection}
+    B -->|"Landmarks (x,y,z)"| C{Gesture Detection}
     C -->|Fist| D[Repel Force]
     C -->|Open| E[Attract Force]
-    C -->|Pinch| F[Drawing Logic]
     C -->|3 Fingers| G[Text Formation]
     
     subgraph Particle Engine
     D --> H[Update Velocity]
     E --> H
-    F --> H
     G --> H
     H --> I[Update Position]
     I --> J[Three.js Renderer]
@@ -64,13 +61,13 @@ sequenceDiagram
     participant Logic as Game Logic
     participant Particles
 
-    User->>Webcam: Shows Gesture (e.g., Pinch)
+    User->>Webcam: Shows Gesture (e.g., 3 Fingers)
     Webcam->>Logic: Sends Hand Landmarks
-    Logic->>Logic: Detect Gesture: PINCH
-    Logic->>Particles: Update Mode to 'DRAW'
-    Logic->>Particles: Add Point to Trail
-    Particles->>Particles: Move towards Trail
-    Particles->>User: Render Glowing Trail
+    Logic->>Logic: Detect Gesture: 3 FINGERS
+    Logic->>Particles: Update Mode to 'TEXT'
+    Logic->>Particles: Calculate Target Positions
+    Particles->>Particles: Lerp to Targets
+    Particles->>User: Render Text Shape
 ```
 
 ---
@@ -84,7 +81,6 @@ stateDiagram-v2
     Idle --> Attract: Open Hand
     Idle --> Wave: 2 Fingers
     Idle --> Text: 3 Fingers
-    Idle --> Draw: Pinch
     
     state DualHand {
         [*] --> Ready
